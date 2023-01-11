@@ -1,8 +1,6 @@
 import fs from "fs";
 const path = `${process.env.PWD}/storage/logs/error.log`;
 
-console.log(process.env.PWD);
-
 export const logError = (data) => {
   if (fs.existsSync(path)) {
     const stat = fs.statSync(path);
