@@ -1,8 +1,14 @@
 import express from "express";
 import cors from "cors";
-import { auth } from "./controllers/auth-controller.js";
+
+// database 
 import { pool } from "./db/db.js";
 import { schema } from "./db/schema.js";
+
+// controllers
+import { auth } from "./controllers/auth-controller.js";
+import { document } from "./controllers/document-controller.js";
+import { functionality } from "./controllers/functionality-controller.js";
 
 const app = express();
 
@@ -12,6 +18,12 @@ app.use(express.json());
 
 // auth controller
 app.use("/auth", auth);
+
+// document controller
+app.use("/documents", document);
+
+// functionality controller
+app.use("/func", functionality);
 
 app.listen(process.env.PORT || 3000, () => {
   pool.query(schema);
