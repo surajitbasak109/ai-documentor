@@ -1,9 +1,15 @@
 import { logError } from "./log-error.js";
 
-export const setErrorMessage = (res, statusCode, message) => {
+export const setErrorMessage = (
+  res,
+  statusCode,
+  message,
+  additionalParams = {}
+) => {
   res.status(statusCode).send({
     error: true,
     message,
+    ...additionalParams,
   });
 };
 

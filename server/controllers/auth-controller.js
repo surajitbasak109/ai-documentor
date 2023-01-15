@@ -3,7 +3,26 @@ import { pool } from "../db/db.js";
 import { bcryptComparePassword, bcryptEncription } from "../utils/bcrypt.js";
 import { jwtGenerator } from "../utils/jwt.js";
 import { logError } from "../utils/log-error.js";
-import { setErrorMessage } from "../utils/res.js";
+import { setErrorMessage, setInternalErrorMessage } from "../utils/res.js";
+import PasswordValidator from "password-validator";
+
+const schema = new PasswordValidator();
+schema
+  .is()
+  .min(8, "Password must have at least 8 characters")
+  .is()
+  .max(30, "Password must have maximum 30 characters")
+  .has()
+  .uppercase(1, "Password must have at least one uppercase letter")
+  .has()
+  .lowercase(1, "Password must have at least one lowercase letter")
+  .has()
+  .digits(1, "Password msut have at least one digit")
+  .has()
+  .not()
+  .spaces()
+  .has()
+  .symbols();
 
 export const auth = express.Router();
 
@@ -24,6 +43,13 @@ auth.post("/register", async (req, res) => {
     if (!password) {
       setErrorMessage(res, 422, "Password is required");
       return;
+    }
+
+    const validatePassword = schema.validate(password, { details: true });
+
+    if (validatePassword.length > 0) {
+      setErrorMessage(res, 422, "Weak password", { reason: validatePassword });
+	  return;
     }
 
     const emailExistsQuery = `
@@ -58,7 +84,7 @@ auth.post("/register", async (req, res) => {
       access_token,
     });
   } catch (error) {
-    res.status(500).send({ error });
+    setInternalErrorMessage(res, error);
   }
 });
 
@@ -86,7 +112,7 @@ auth.post("/login", async (req, res) => {
 
     const user = userExists.rows[0];
 
-    const passwordIsCorrect = bcryptComparePassword(password, user.password);
+    const passwordIsCorrect = await bcryptComparePassword(password, user.password);
 
     if (!passwordIsCorrect) {
       setErrorMessage(res, 400, "Invalid email or password");
@@ -103,8 +129,6 @@ auth.post("/login", async (req, res) => {
       access_token,
     });
   } catch (error) {
-    setErrorMessage(res, 500, "Something went wrong");
-    console.log({ error });
-    logError(error.toString());
+    setInternalErrorMessage(res, error);
   }
 });
